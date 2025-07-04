@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FACEIT Stats</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes gradientFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .animate-gradientFlow {
+            animation: gradientFlow 3s ease infinite;
+            background-size: 200% 100%;
+        }
+        body {
+            background-color: transparent !important;
+            overflow: hidden;
+        }
+        .liquid-glass {
+            background: linear-gradient(
+                135deg,
+                rgba(255, 255, 255, 0.4) 0%,
+                rgba(255, 255, 255, 0.2) 50%,
+                rgba(255, 255, 255, 0.4) 100%
+            );
+            backdrop-filter: blur(12px) saturate(200%);
+            -webkit-backdrop-filter: blur(12px) saturate(200%);
+            box-shadow: 
+                0 0 0 1px rgba(255, 255, 255, 0.1),
+                0 2px 30px rgba(0, 0, 0, 0.1),
+                0 0 100px rgba(255, 255, 255, 0.2) inset;
+            border-radius: 0.5rem;
+            position: relative;
+            z-index: 10;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        .liquid-glass::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                to bottom right,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0) 40%,
+                rgba(255, 255, 255, 0.3) 50%,
+                rgba(255, 255, 255, 0) 60%,
+                rgba(255, 255, 255, 0) 100%
+            );
+            transform: rotate(30deg);
+            animation: shine 8s infinite;
+            opacity: 0.5;
+        }
+        @keyframes shine {
+            0% { transform: translateX(-100%) rotate(30deg); }
+            20% { transform: translateX(100%) rotate(30deg); }
+            100% { transform: translateX(100%) rotate(30deg); }
+        }
+        @keyframes smoothPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .value-pulse {
+            animation: smoothPulse 1s ease-in-out;
+            display: inline-block;
+            transform-origin: center bottom;
+        }
+        .stat-text {
+            color: rgba(255, 255, 255, 0.95);
+            text-shadow: 
+                0 -1px 1px rgba(0, 0, 0, 0.5),
+                0 1px 1px rgba(0, 0, 0, 0.3),
+                0 1px 3px rgba(0, 0, 0, 0.2);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .header-text {
+            color: rgba(255, 255, 255, 0.95);
+            text-shadow: 
+                0 -1px 1px rgba(0, 0, 0, 0.6),
+                0 1px 1px rgba(0, 0, 0, 0.4),
+                0 1px 3px rgba(0, 0, 0, 0.3);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .wins-color { 
+            color: #00ff88;
+            text-shadow: 
+                0 -1px 1px rgba(0, 0, 0, 0.5),
+                0 1px 1px rgba(0, 0, 0, 0.3);
+            font-weight: 600;
+        }
+        .losses-color { 
+            color: #ff3860;
+            text-shadow: 
+                0 -1px 1px rgba(0, 0, 0, 0.5),
+                0 1px 1px rgba(0, 0, 0, 0.3);
+            font-weight: 600;
+        }
+        .winrate-color { 
+            color: #00b5ff;
+            text-shadow: 
+                0 -1px 1px rgba(0, 0, 0, 0.5),
+                0 1px 1px rgba(0, 0, 0, 0.3);
+            font-weight: 600;
+        }
+        .winrate-warning { 
+            color: #ffdd57;
+        }
+        .winrate-danger { 
+            color: #ff3860;
+        }
+        .kd-color { 
+            color: #00b5ff;
+            text-shadow: 
+                0 -1px 1px rgba(0, 0, 0, 0.5),
+                0 1px 1px rgba(0, 0, 0, 0.3);
+            font-weight: 600;
+        }
+        .kd-warning { 
+            color: #ffdd57;
+        }
+        .kd-danger { 
+            color: #ff3860;
+        }
+        .avg-color { 
+            color: #00b5ff;
+            text-shadow: 
+                0 -1px 1px rgba(0, 0, 0, 0.5),
+                0 1px 1px rgba(0, 0, 0, 0.3);
+            font-weight: 600;
+        }
+        .avg-warning { 
+            color: #ffdd57;
+        }
+        .avg-danger { 
+            color: #ff3860;
+        }
+        .divider {
+            height: 8px;
+            width: 1px;
+            background-color: rgba(0, 0, 0, 0.15);
+        }
+        @media (min-width: 640px) {
+            .divider {
+                height: 10px;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 relative">
+    <div class="relative w-full max-w-xs liquid-glass">
+        <div class="h-1.5 bg-gradient-to-r from-cyan-300 via-teal-400 to-emerald-500 animate-gradientFlow"></div>
+        <div class="flex justify-between items-center px-2 py-3 text-xs sm:text-sm relative z-20 gap-1">
+            <div class="flex flex-col items-center px-1">
+                <span class="text-xs sm:text-sm header-text">ELO</span>
+                <span class="text-base sm:text-lg stat-text value-display" id="elo">---</span>
+            </div>
+            <div class="divider"></div>
+            <div class="flex flex-col items-center px-1">
+                <span class="text-xs sm:text-sm header-text">W/L</span>
+                <span class="flex gap-0.5">
+                    <span class="text-base sm:text-lg wins-color value-display" id="wins">---</span>
+                    <span class="stat-text">/</span>
+                    <span class="text-base sm:text-lg losses-color value-display" id="losses">---</span>
+                </span>
+            </div>
+            <div class="divider"></div>
+            <div class="flex flex-col items-center px-1">
+                <span class="text-xs sm:text-sm header-text">WIN%</span>
+                <span class="text-base sm:text-lg winrate-color value-display" id="winRate">---%</span>
+            </div>
+            <div class="divider"></div>
+            <div class="flex flex-col items-center px-1">
+                <span class="text-xs sm:text-sm header-text">K/D</span>
+                <span class="text-base sm:text-lg kd-color value-display" id="kd">---</span>
+            </div>
+            <div class="divider"></div>
+            <div class="flex flex-col items-center px-1">
+                <span class="text-xs sm:text-sm header-text">AVG</span>
+                <span class="text-base sm:text-lg avg-color value-display" id="avg">---</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = 'f973cb1d-e05d-4e4a-8877-89a87b300898';
+        const NICKNAME = 'nepizdinaxyi';
+        
+        const elements = {
+            elo: document.getElementById('elo'),
+            wins: document.getElementById('wins'),
+            losses: document.getElementById('losses'),
+            winRate: document.getElementById('winRate'),
+            kd: document.getElementById('kd'),
+            avg: document.getElementById('avg')
+        };
+
+        function getCurrentMSKDate() {
+            const now = new Date();
+            const mskOffset = 3 * 60 * 60 * 1000;
+            return new Date(now.getTime() + mskOffset);
+        }
+
+        function convertToMSK(timestamp) {
+            const mskOffset = 3 * 60 * 60;
+            return new Date((timestamp + mskOffset) * 1000);
+        }
+
+        function pulseAllValues() {
+            Object.values(elements).forEach(el => {
+                el.classList.add('value-pulse');
+                setTimeout(() => el.classList.remove('value-pulse'), 1000);
+            });
+        }
+
+        function updateTextColors(stats) {
+            const winRateEl = elements.winRate;
+            winRateEl.classList.remove('winrate-warning', 'winrate-danger');
+            if (stats.winRate < 40) {
+                winRateEl.classList.add('winrate-danger');
+            } else if (stats.winRate < 50) {
+                winRateEl.classList.add('winrate-warning');
+            }
+
+            const kdEl = elements.kd;
+            kdEl.classList.remove('kd-warning', 'kd-danger');
+            if (stats.kd < 0.8) {
+                kdEl.classList.add('kd-danger');
+            } else if (stats.kd < 1.0) {
+                kdEl.classList.add('kd-warning');
+            }
+
+            const avgEl = elements.avg;
+            avgEl.classList.remove('avg-warning', 'avg-danger');
+            if (stats.avg < 13) {
+                avgEl.classList.add('avg-danger');
+            } else if (stats.avg < 15) {
+                avgEl.classList.add('avg-warning');
+            }
+        }
+
+        async function fetchStats() {
+            try {
+                const currentMSKDate = getCurrentMSKDate();
+                const todayDateString = currentMSKDate.toISOString().split('T')[0];
+                
+                const playerResponse = await fetch(`https://open.faceit.com/data/v4/players?nickname=${NICKNAME}`, {
+                    headers: { Authorization: `Bearer ${API_KEY}` },
+                });
+
+                if (!playerResponse.ok) throw new Error('Player data not available');
+                const playerData = await playerResponse.json();
+                const playerId = playerData.player_id;
+                
+                elements.elo.textContent = playerData.games?.cs2?.faceit_elo || '---';
+                
+                const matchesResponse = await fetch(`https://open.faceit.com/data/v4/players/${playerId}/history?game=cs2&offset=0&limit=50`, {
+                    headers: { Authorization: `Bearer ${API_KEY}` },
+                });
+                
+                if (!matchesResponse.ok) throw new Error('Matches data not available');
+                const matchesData = await matchesResponse.json();
+                
+                let dailyWins = 0;
+                let dailyLosses = 0;
+                let totalKills = 0;
+                let totalDeaths = 0;
+                let matchesWithStats = 0;
+
+                for (const match of matchesData.items) {
+                    const matchMSKDate = convertToMSK(match.started_at);
+                    const matchDateString = matchMSKDate.toISOString().split('T')[0];
+                    
+                    if (matchDateString !== todayDateString) continue;
+
+                    let playerTeam = null;
+                    if (match.teams?.faction1?.players?.some(p => p.player_id === playerId)) {
+                        playerTeam = 'faction1';
+                    } else if (match.teams?.faction2?.players?.some(p => p.player_id === playerId)) {
+                        playerTeam = 'faction2';
+                    }
+                    
+                    if (playerTeam && match.results?.winner) {
+                        if (match.results.winner === playerTeam) {
+                            dailyWins++;
+                        } else {
+                            dailyLosses++;
+                        }
+                    }
+                    
+                    try {
+                        const matchStatsResponse = await fetch(`https://open.faceit.com/data/v4/matches/${match.match_id}/stats`, {
+                            headers: { Authorization: `Bearer ${API_KEY}` },
+                        });
+                        
+                        if (matchStatsResponse.ok) {
+                            const matchStats = await matchStatsResponse.json();
+                            const playerStats = matchStats.rounds[0]?.teams
+                                .flatMap(team => team.players)
+                                .find(player => player.player_id === playerId);
+                            
+                            if (playerStats?.player_stats) {
+                                const kills = parseInt(playerStats.player_stats.Kills) || 0;
+                                const deaths = parseInt(playerStats.player_stats.Deaths) || 0;
+                                totalKills += kills;
+                                totalDeaths += deaths;
+                                matchesWithStats++;
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Error fetching match stats:', e);
+                    }
+                }
+                
+                elements.wins.textContent = dailyWins;
+                elements.losses.textContent = dailyLosses;
+                
+                const totalGames = dailyWins + dailyLosses;
+                const winRate = totalGames > 0 ? Math.round((dailyWins / totalGames) * 100) : 0;
+                elements.winRate.textContent = `${winRate}%`;
+                
+                let kdValue = '---';
+                if (totalDeaths > 0) {
+                    kdValue = (totalKills / totalDeaths).toFixed(2);
+                } else if (totalKills > 0) {
+                    kdValue = '∞';
+                }
+                elements.kd.textContent = kdValue;
+                
+                const avgKills = matchesWithStats > 0 ? (totalKills / matchesWithStats).toFixed(1) : '0.0';
+                elements.avg.textContent = avgKills;
+
+                updateTextColors({
+                    winRate: winRate,
+                    kd: kdValue === '---' ? 0 : (kdValue === '∞' ? 999 : parseFloat(kdValue)),
+                    avg: parseFloat(avgKills)
+                });
+
+            } catch (err) {
+                console.error('Failed to fetch stats:', err);
+                Object.values(elements).forEach(el => el.textContent = 'ERR');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchStats();
+            setInterval(fetchStats, 30000);
+            setInterval(pulseAllValues, 60000);
+            setTimeout(pulseAllValues, 1000);
+        });
+    </script>
+</body>
+</html>
